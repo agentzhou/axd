@@ -1,1 +1,99 @@
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apollo-configservice-svc
+  namespace: goa
+spec:
+  type: NodePort
+  ports:
+    - port: 7007
+#不指定nodeport，随机分配
+#      nodePort:
+  selector:
+    app: apollo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apollo-adminservice-svc
+  namespace: goa
+spec:
+  type: NodePort
+  ports:
+    - port: 7008
+#      nodePort:
+  selector:
+    app: apollo
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: apollo
+  namespace: goa
+  labels:
+    app: apollo
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: apollo
+    spec:
+      containers:
+      - name: apollo-configservice
+        #其它环境需要改成公网镜像地址
+        image: registry-vpc.cn-shenzhen.aliyuncs.com/zhouc/apollo-configservice:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - name: port-config
+          containerPort: 7007
+          protocol: TCP
+        volumeMounts:
+        - name: configservice-vol-2
+          mountPath: /etc/apollo-configservice/config2
+        - name: configservice-vol-4
+          mountPath: /etc/apollo-configservice/scripts
+        livenessProbe:
+          tcpSocket:
+            port: 7007
+          initialDelaySeconds: 600
+          timeoutSeconds: 5
+          periodSeconds: 60
+      - name: apollo-adminservice
+        #其它环境需要改成公网镜像地址
+        image: registry-vpc.cn-shenzhen.aliyuncs.com/zhouc/apollo-adminservice:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - name: port-admin
+          containerPort: 7008
+          protocol: TCP
+        volumeMounts:
+        - name: adminservice-vol-2
+          mountPath: /etc/apollo-adminservice/config2
+        - name: adminservice-vol-4
+          mountPath: /etc/apollo-adminservice/scripts
+        livenessProbe:
+          tcpSocket:
+            port: 7008
+          initialDelaySeconds: 600
+          timeoutSeconds: 5
+          periodSeconds: 60
+      restartPolicy: Always
+      volumes:
+      - name: configservice-vol-2
+        configMap:
+          name: apollo-configservice-application-github.properties
+      - name: configservice-vol-4
+        configMap:
+          name: apollo-configservice-startup.sh
+      - name: adminservice-vol-2
+        configMap:
+          name: apollo-adminservice-application-github.properties
+      - name: adminservice-vol-4
+        configMap:
+          name: apollo-adminservice-startup.sh
