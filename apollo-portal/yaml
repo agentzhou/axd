@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: apollo-portal
+  namespace: goa
+  labels:
+    app: apollo-portal
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: apollo-portal
+    spec:
+      containers:
+      - name: apollo-portal
+        image: registry-vpc.cn-shenzhen.aliyuncs.com/zhouc/apollo-portal:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - name: port-config
+          containerPort: 7009
+          protocol: TCP
+        volumeMounts:
+        - name: portal-vol-1
+          mountPath: /etc/apollo-portal/config1
+        - name: portal-vol-2
+          mountPath: /etc/apollo-portal/config2
+        livenessProbe:
+          tcpSocket:
+            port: 7009
+          initialDelaySeconds: 600
+          timeoutSeconds: 5
+          periodSeconds: 60
+      restartPolicy: Always
+      volumes:
+      - name: portal-vol-1
+        configMap:
+          name: apollo-portal-env.properties
+      - name: portal-vol-2
+        configMap:
+          name: apollo-portal-application-github.properties
