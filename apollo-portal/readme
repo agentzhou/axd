@@ -1,0 +1,9 @@
+阿里云镜像地址：www.aliyun.com
+1 容器namespace：goa
+1.1 portal定义端口7009，如需要使用默认端口，需要从新下载apollo-portal，在startup.sh中修改，然后制作镜像
+1.2 使用前先创建configmap：
+  configservice和adminservice要分别创建
+  数据库链接信息 kubectl create configmap {name} -n goa --from-file=/zhouc/apollo-configservice/config/application-github.properties
+  环境env配置信息 
+  kubectl create cm apollo-portal-application-github.properties -n goa --from-file=/zhouc/config/apollo-portal/application-github.properties
+  kubectl create cm apollo-portal-env.properties -n goa --from-file=/zhouc/config/apollo-portal/apollo-env.properties
